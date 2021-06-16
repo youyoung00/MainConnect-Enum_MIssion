@@ -1,315 +1,206 @@
 import 'dart:convert';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:sh_selfstudy_ver0417/exProvider/ex2Provider.dart';
-import 'package:sh_selfstudy_ver0417/exProvider/exProvider.dart';
-import 'package:sh_selfstudy_ver0417/exProvider/exview.dart';
-import 'package:sh_selfstudy_ver0417/logic/Connect.dart';
-import 'package:sh_selfstudy_ver0417/logic/mainConnectData.dart';
-import 'package:sh_selfstudy_ver0417/models/mainDataModel.dart';
-import 'package:sh_selfstudy_ver0417/models/subConnectData.dart';
-import 'package:sh_selfstudy_ver0417/models/subModel.dart';
-import 'package:sh_selfstudy_ver0417/providers/mainProvider.dart';
-import 'pageTwo.dart';
+import 'package:mymusic1/Models/MainDataModels.dart';
+import 'package:mymusic1/Models/SubDataModel.dart';
+import 'package:mymusic1/Providers/mainProvider.dart';
+import 'package:mymusic1/exProvider/ex2Provider.dart';
+import 'package:mymusic1/exProvider/ex3Provider.dart';
+import 'package:mymusic1/exProvider/exProvider.dart';
+import 'package:mymusic1/exProvider/exView.dart';
+import 'package:mymusic1/logic/mainConnectData.dart';
+import 'package:mymusic1/TwoPage.dart';
 import 'package:http/http.dart' as http;
+import 'package:mymusic1/logic/Connect.dart';
+import 'package:provider/provider.dart';
 
 void main(){runApp(new App());}
-
 class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<ExProvider>(
-          create: (_) => new ExProvider(),
+            create: (_) => new ExProvider(),
         ),
         ChangeNotifierProvider<Ex2Provider>(
-          create: (_) => new Ex2Provider(),
+            create: (_) => new Ex2Provider()
         ),
         ChangeNotifierProvider<MainProvider>(
-         create: (_) => new MainProvider(),
-         //   create:(_){
-         //     //return new MainProvider()..init();
-         //   MainProvider provider = new MainProvider();
-         //   provider.init();
-         //   return provider;
-          // }
-        ),
+          create: (_) => new MainProvider()
+        )
       ],
       child: new MaterialApp(
-        // Widget - Build
-        // home: MainPage(), // Build -> items()
-        // home:MultiProvider(
+                //home: MainPage(),
+        // home: MultiProvider(
         //   providers: [
         //     ChangeNotifierProvider<Ex2Provider>(
-        //       create: (_)=> new Ex2Provider(),
+        //         create: (_) => new Ex2Provider()
         //     )
         //   ],
-        //   child: ExView(),
-        // )
-        home: new MainPage2(),
+        home: MainPage(),
       ),
     );
   }
 }
 
-
-// 다른 화면에서도 상태 또는 로직의 영향을 받게 할 것인가?
-// * 모든 페이지에 영향을 주는 프로바이더
 class MainPage2 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     MainProvider provider = Provider.of<MainProvider>(context);
     return Scaffold(
       appBar: AppBar(),
-      // enum
-      // @TODO(11일 금요일까지) : MainConnect Enum 적용해서 UI까지 수정
       body: this.items(provider.data)
     );
   }
 
   Widget items(MainConnectData data){
     if(data == null) return Container(
-      child: Center(child: Text("Load...."),),
+      child: Center(child: Text("Load..."),),
     );
     // if(data.data.length == 0)
     if(data.data.isEmpty) return Container(
-      child: Center(child: Text("서버와의 연결의 오류가 발생했습니다."),),
+      child: Center(child: Text("서버 연결의 오류가 발생했습니다."),),
     );
-    //if(data.viewTxt == "서버와 연결이 지연되고 있습니다 다시 실행해주세요");
+    //if(data.viewTxt == "서버와의 연결이 지연되고 있습니다 다시 실행 해주세요");
     return Container(
       child: GridView.builder(
         itemCount: data.data.length,
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
         itemBuilder: (BuildContext context, int index) => Container(
-          child: Text(data.data[index].title),
-        )
+          child: Text(data.data[index].category),
+        ),
       ),
     );
   }
 }
 
 
-// Widget
 class MainPage extends StatefulWidget {
-
   @override
   _MainPageState createState() => _MainPageState();
 }
 
 class _MainPageState extends State<MainPage> {
 
-  List<MainDataModel> vData;
-  String viewLoadTxt = "로딩 중...";
-  Connect connect = new Connect();
+  List <MainDataModel> data;
+  String viewLoadTxt = "로딩 중.....";
+  //Connect connect = new Connect();
+  MainConnectData vData;
+  int index;
+  //MainConnectData mainConnectData;
 
   @override
   void initState() {
-
     Future(() async{
-      // MainConnectData data = await this.connect.mainConnect();
-      // this.vData = data.data;
-      // this.viewLoadTxt = data.viewTxt;
-      //
-      // SubConnectData sData = await this.connect.subConnect(index: 0);
-      // if(sData.check == null){
-      //   print("LOADING");
-      // }
-      //
-      // if(sData.check == SubConnectCheck.ServerTimeOut){
-      //   print("ServerTimeOut");
-      // }
-      //
-      // if(sData.check == SubConnectCheck.Error){
-      //   print("Error");
-      // }
-      //
-      // if(sData.check == SubConnectCheck.OK){
-      //   print("OK");
-      // }
-
+      //MainConnectData connect =
+      this.vData = await Connect().mainConnect(data);
       if(!mounted) return;
       setState(() {});
     });
-
-    new Future(this.connect.connect);
-    this.connect.connect();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       drawer: Drawer(),
       appBar: AppBar(
-        // leading: Container(),
-        backgroundColor: Colors.green,
-        title: Text("LOGO"),
+        title: Text("My Music"),
         centerTitle: true,
-        // (1)
         actions: [
-          new IconButton(
-            icon: Icon(Icons.settings),
+          IconButton(
+            icon: Icon(Icons.add_outlined),
             onPressed: (){
-              // ...
               return;
-              // print("asd"); // 동작 X
             },
-          ),
-        ],
-        // (2) 변수
-        // actions: this._myActions,
-        // (3) 함수
-        // actions: this._myFuncActions(),
-        // (4 - 1) 클래스
-        // actions: [ new MyIconSetting1() ],
-        // (4 - 2) 리스트<클래스>
-        // (4 - 2 - 1)
-        // actions: new PartActions().actionsWidget(),
-        // (4 - 2 - 2)
-        // actions: this._partActions.actionsWidget(),
-        // (4 - 2 - 3)
-        // actions: this._partActions.actionsWidget2,
-        // (4 - 2 - 4)
-        // actions: PartActions.actionsWidget3,
-        // (4 - 2 - 5)
-        // actions: PartActions.actionsWidget4(),
-      ),
-      body: this.vData == null
-        ? Center(child: Text(this.viewLoadTxt),)
-        : new GridView.builder(
-        padding: new EdgeInsets.all(10.0),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 10.0,
-          crossAxisSpacing: 10.0,
-        ),
-        // scrollDirection: Axis.horizontal,
-        // children: [
-        //   this._items(), // new Containr(....)
-        //   this._items(), // new Containr(....)
-        //   this._items(), // new Containr(....)
-        //   this._items(), // new Containr(....)
-        //   this._items(), // new Containr(....)
-        //   Container(color: Colors.blue,),
-        //   Container(color: Colors.yellow,),
-        // ],
-        // children: [1,2,3,4,5].map<Widget>((int e) => this._items(e)).toList(),
-        // [ new Container(...), ... , ... , ... , ]
-        // itemCount: this.sData.length, // 6개 // 2개...+-
-        itemCount: this.vData.length,
-        itemBuilder: (BuildContext context, int i){ // 0번째,1번째,2..,3..,4..,5.., itemCount-1번째까지 반복 --> List
-          // return Container();
-          return this._items(i, context); // data[0]
-        },
-      ),
-    );
-  }
-
-  List<int> data = [1,2,3,4,5,6];
-
-  Widget _items(int i, BuildContext context){
-    // InkWell
-    return GestureDetector(
-      onTap: (){
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (BuildContext context){
-              // return Scaffold(appBar: AppBar(),);
-              return new PageTwo(
-                // title: this.sData[i]['title'].toString(),
-                // datas: List.from(this.sData[i]['datas'])
-                index: i,
-                title: this.vData[i].title,
-                datas: this.vData[i].datas,
-              );
-            }
           )
-        );
-        // push
-        // pop
-
-        return;
-      },
-      child: new Container(
-        color: Colors.red,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            Container(
-              color: Colors.orange,
-              child: Icon(Icons.more_horiz),
-              // width: (MediaQuery.of(context).size.width/2)-15.0,
-              alignment: Alignment.centerRight,
-              padding: EdgeInsets.only(right: 10.0),
-            ),
-            Container(
-              width: 60.0,
-              height: 60.0,
-              // color: Colors.red,
-              decoration: BoxDecoration(
-                  color: Colors.blue,
-                  borderRadius: BorderRadius.circular(60.0),
-                  image: DecorationImage(
-                      fit: BoxFit.cover,
-                      image: NetworkImage("https://images.unsplash.com/photo-1611095965923-b8b19341cc29?ixid=MnwxMjA3fDF8MHxlZGl0b3JpYWwtZmVlZHwxMXx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60")
-                  )
-              ),
-            ),
-            Container(
-              child: Text(
-                // this.sData[i]["title"].toString(), // dynamic
-                this.vData[i].title,
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20.0
-                ),
-              ),
-            ),
-            Container(
-              // alignment: Alignment.center,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Icon(Icons.person),
-                  Icon(Icons.access_alarm)
-                ],
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
+      body: this._checkWidget(vData)
     );
   }
-}
 
-class MyIconSetting1 extends StatelessWidget {
-  // 변수 및 함수를 사용 할 수 있음
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      icon: Icon(Icons.settings),
-      onPressed: (){
-        print("CLASS MyIconSetting을 누름");
+  Widget _checkWidget(MainConnectData vData){
+    if(vData == null) return Center(child: Text("Loading........."),);
+    if(vData.check == MainConnectCheck.ServerTimeOut) return Center(child: Text("서버와의 연결이 지연되고 있습니다. 고객센터에 문의하세요."),);
+    if(vData.check == MainConnectCheck.Error) return Center(child: Text("오류가 발생하였습니다......"),);
+    return new GridView.builder(
+      padding: EdgeInsets.all(10.0),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 10.0,
+        crossAxisSpacing: 10.0,
+      ),
+      itemCount: this.vData.data.length,
+      itemBuilder: (BuildContext context, int i){
+        return GestureDetector(
+          onTap: (){
+            Navigator.of(context).push(
+                MaterialPageRoute(builder: (BuildContext context){
+                  return new TwoPage(
+                      index: i,
+                      category: this.vData.data[i].category,//this.vData[i].category,
+                      datas: this.vData.data[i].datas,
+                      categoryimg: this.vData.data[i].categoryimg
+                  );
+                })
+            );
+            return;
+          },
+          child: new Container(
+            width: 60.0,
+            height: 60.0,
+            color: Colors.black12,
+            child: Column(
+              children: [
+                Container(
+                  margin: EdgeInsets.only(top: 10.0),
+                  padding: EdgeInsets.only(right: 5.0),
+                  alignment: Alignment.centerRight,
+                  width: MediaQuery.of(context).size.width,
+                  color: Colors.amberAccent,
+                  child: Icon(
+                    Icons.playlist_add_check,
+                  ),
+                ),
+                Container(
+                  margin: EdgeInsets.only(top:10.0, bottom: 10.0),
+                  width: 70.0,
+                  height: 70.0,
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(70.0),
+                      color: Colors.red,
+                      image: DecorationImage(
+                          image: NetworkImage(this.vData.data[i].categoryimg),
+                          fit: BoxFit.cover
+                      )
+                  ),
+                ),
+                Container(
+                  child: Title(
+                    color: Colors.black,
+                    child: Text(this.vData.data[i].category,
+                      style: TextStyle(
+                          fontSize: 20.0,
+                          fontWeight: FontWeight.bold
+                      ),
+                    ),
+                  ),
+                ),
+                Container(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Icon(Icons.play_arrow_sharp),
+                      Icon(Icons.settings),
+                    ],
+                  ),
+                )
+              ],
+            ),
+          ),
+        );
       },
     );
   }
 }
-
-class PartActions{
-  List<Widget> actionsWidget(){
-    return [ new MyIconSetting1() ];
-  }
-
-  List<Widget> actionsWidget2 = [ new MyIconSetting1() ];
-
-  static List<Widget> actionsWidget3 = [ new MyIconSetting1() ];
-
-  static List<Widget> actionsWidget4(){
-    return [ new MyIconSetting1() ];
-  }
-}
-
-
